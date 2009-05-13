@@ -284,6 +284,13 @@ class EventedMysql
     # end unless settings[:connections] == @connection_pool.size
     # @connection_pool
   end
+
+  def self.reset!
+    @connection_pool.each do |c|
+      c.detach
+    end
+    @connection_pool = nil
+  end
 end
 
 if __FILE__ == $0 and require 'em/spec'
@@ -396,7 +403,7 @@ if __FILE__ == $0 and require 'em/spec'
   def SQL(query, &blk) SQL.select(query, &blk) end
 
   # XXX this should get cleaned up automatically after reactor stops
-  SQL.instance_variable_set('@connection_pool', nil)
+  SQL.reset!
 
 
   EM.describe SQL, 'sql api' do
