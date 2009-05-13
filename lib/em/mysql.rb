@@ -86,7 +86,7 @@ class EventedMysql < EM::Connection
   end
 
   def unbind
-    log 'mysql disconnect', $!
+    log 'mysql disconnect', $!, *($! ? $!.backtrace[0..5] : [])
     # cp = EventedMysql.instance_variable_get('@connection_pool') and cp.delete(self)
     @connected = false
 
