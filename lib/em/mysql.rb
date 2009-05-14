@@ -150,7 +150,7 @@ class EventedMysql < EM::Connection
   
   def close
     @connected = false
-    # @mysql.close
+    @mysql.close
     # IO.pipe
     # EM.add_timer(0){ close_connection }
     # close_connection
@@ -287,7 +287,7 @@ class EventedMysql
 
   def self.reset!
     @connection_pool.each do |c|
-      c.detach
+      c.close
     end
     @connection_pool = nil
   end
