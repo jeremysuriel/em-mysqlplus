@@ -162,8 +162,10 @@ class EventedMysql < EM::Connection
     # EM.add_timer(0){ close_connection }
     # close_connection
     fd = detach
-    @io.close if @io
-    @io = nil
+    if @io
+      @io.close rescue nil
+      @io = nil
+    end 
     log 'detached fd', fd
   end
 
