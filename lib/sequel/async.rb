@@ -1,14 +1,14 @@
 # async sequel extensions, for use with em-mysql
 #
 #   require 'em/mysql'
-#   DB = Sequel.connect(...)
-#   ADB = EventedMysql.connect(..., :on_error => proc{|e| log 'error', e })
+#   DB = Sequel.connect(:adapter => 'mysql', :user => 'root', :database => 'test', ...)
+#   EventedMysql.settings.update(..., :on_error => proc{|e| log 'error', e })
 #
 #   def log *args
 #     p [Time.now, *args]
 #   end
 #
-#   DB[:table].where(:id < 100).async_update do |num_updated|
+#   DB[:table].where(:id < 100).async_update(:field => 'new value') do |num_updated|
 #     log "done updating #{num_updated} rows"
 #   end
 #
@@ -45,52 +45,78 @@
 #     log "table has #{num_rows} rows"
 #   end
 
+require 'sequel'
+raise 'need Sequel >= 3.2.0' unless Sequel::MAJOR == 3 and Sequel::MINOR >= 2
+
 module Sequel
   class Dataset
     def async_insert *args, &cb
-      ADB.insert insert_sql(*args), &cb
+      EventedMysql.insert insert_sql(*args), &cb
+      nil
+    end
+
+    def async_insert_ignore *args, &cb
+      EventedMysql.insert insert_ignore.insert_sql(*args), &cb
       nil
     end
 
     def async_update *args, &cb
-      ADB.update update_sql(*args), &cb
+      EventedMysql.update update_sql(*args), &cb
       nil
     end
 
     def async_delete &cb
-      ADB.execute delete_sql, &cb
+      EventedMysql.execute delete_sql, &cb
       nil
     end
 
     def async_multi_insert *args, &cb
-      ADB.execute multi_insert_sql(*args).first, &cb
+      EventedMysql.execute multi_insert_sql(*args).first, &cb
       nil
     end
 
     def async_multi_insert_ignore *args, &cb
-      ADB.execute multi_insert_sql(*args).first.sub(/insert/i, "INSERT IGNORE"), &cb
+      EventedMysql.execute insert_ignore.multi_insert_sql(*args).first, &cb
       nil
     end
 
-    def async_each *args
-      ADB.select(select_sql(*args)) do |rows|
-        rows.each{|r|
-          r = transform_load(r) if @transform
-          r = row_proc[r] if row_proc
+    def async_fetch_rows sql, iter = :each
+      EventedMysql.raw(sql) do |m|
+        r = m.result
+
+        i = -1
+        cols = r.fetch_fields.map{|f| [output_identifier(f.name), Sequel::MySQL::MYSQL_TYPES[f.type], i+=1]}
+        @columns = cols.map{|c| c.first}
+        rows = []
+        while row = r.fetch_row
+          h = {}
+          cols.each{|n, p, i| v = row[i]; h[n] = (v && p) ? p.call(v) : v}
+          if iter == :each
+            yield h
+          else
+            rows << h
+          end
+        end
+        yield rows if iter == :all
+      end
+      nil
+    end
+
+    def async_each
+      async_fetch_rows(select_sql, :each) do |r|
+        if row_proc = @row_proc
+          yield row_proc.call(r)
+        else
           yield r
-        }
+        end
       end
       nil
     end
 
     def async_all
-      ADB.select(sql) do |rows|
-        if row_proc or transform
-          yield(rows.map{|r|
-            r = transform_load(r) if @transform
-            r = row_proc[r] if row_proc
-            r
-          })
+      async_fetch_rows(sql, :all) do |rows|
+        if row_proc = @row_proc
+          yield(rows.map{|r| row_proc.call(r) })
         else
           yield(rows)
         end
@@ -102,8 +128,8 @@ module Sequel
       if options_overlap(COUNT_FROM_SELF_OPTS)
         from_self.async_count(&cb)
       else
-        naked.async_each(STOCK_COUNT_OPTS){|r|
-          yield r.values.first.to_i
+        clone(STOCK_COUNT_OPTS).async_each{|r|
+          yield r.is_a?(Hash) ? r.values.first.to_i : r.values.values.first.to_i
         }
       end
       nil
@@ -124,6 +150,7 @@ module Sequel
 
     class << self
       [ :async_insert,
+        :async_insert_ignore,
         :async_multi_insert,
         :async_multi_insert_ignore,
         :async_each,
