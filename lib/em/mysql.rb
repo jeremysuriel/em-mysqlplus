@@ -3,6 +3,8 @@ require 'eventmachine'
 require 'mysqlplus'
 require 'fcntl'
 
+MAX_RETRIES_ON_DEADLOCKS = 10
+
 class Mysql
   def result
     @cur_result
@@ -36,7 +38,7 @@ class EventedMysql < EM::Connection
     log 'readable'
     if item = @current
       @current = nil
-      start, response, sql, cblk, eblk = item
+      start, response, sql, cblk, eblk, retries = item
       log 'mysql response', Time.now-start, sql
       arg = case response
             when :raw
@@ -71,12 +73,12 @@ class EventedMysql < EM::Connection
     end
   rescue Mysql::Error => e
     log 'mysql error', e.message
-    if e.message =~ /Deadlock/
-      @@queue << [response, sql, cblk, eblk]
+    if e.message =~ /Deadlock/ and retries < MAX_RETRIES_ON_DEADLOCKS
+      @@queue << [response, sql, cblk, eblk, retries + 1]
       @processing = false
       next_query
     elsif DisconnectErrors.include? e.message
-      @@queue << [response, sql, cblk, eblk]
+      @@queue << [response, sql, cblk, eblk, retries + 1]
       return close
     elsif cb = (eblk || @opts[:on_error])
       cb.call(e)
@@ -118,7 +120,7 @@ class EventedMysql < EM::Connection
     end
   end
 
-  def execute sql, response = nil, cblk = nil, eblk = nil, &blk
+  def execute sql, response = nil, cblk = nil, eblk = nil, retries = 0, &blk
     cblk ||= blk
 
     begin
@@ -138,13 +140,13 @@ class EventedMysql < EM::Connection
         log 'mysql sending', sql
         @mysql.send_query(sql)
       else
-        @@queue << [response, sql, cblk, eblk]
+        @@queue << [response, sql, cblk, eblk, retries]
         return
       end
     rescue Mysql::Error => e
       log 'mysql error', e.message
       if DisconnectErrors.include? e.message
-        @@queue << [response, sql, cblk, eblk]
+        @@queue << [response, sql, cblk, eblk, retries]
         return close
       else
         raise e
@@ -152,7 +154,7 @@ class EventedMysql < EM::Connection
     end
 
     log 'queuing', response, sql
-    @current = [Time.now, response, sql, cblk, eblk]
+    @current = [Time.now, response, sql, cblk, eblk, retries]
   end
   
   def close
