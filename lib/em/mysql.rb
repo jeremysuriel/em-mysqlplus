@@ -181,7 +181,7 @@ class EventedMysql < EM::Connection
 
   public
 
-  def self.connect opts
+  def self.connect servers_opts
     unless EM.respond_to?(:watch) and Mysql.method_defined?(:socket)
       raise RuntimeError, 'mysqlplus and EM.watch are required for EventedMysql'
     end
