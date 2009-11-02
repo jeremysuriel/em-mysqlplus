@@ -181,13 +181,11 @@ class EventedMysql < EM::Connection
 
   public
 
-  def self.connect *servers_opts
+  def self.connect opts
     unless EM.respond_to?(:watch) and Mysql.method_defined?(:socket)
       raise RuntimeError, 'mysqlplus and EM.watch are required for EventedMysql'
     end
     
-    opts = servers_opts.pop
-    opts[:failover] = servers_opts
     if conn = _connect(opts)
       EM.watch conn.socket, self, conn, opts
     else
@@ -246,8 +244,6 @@ class EventedMysql < EM::Connection
     if cb = opts[:on_error]
       cb.call(e)
       nil
-    elsif opts[:failover] 
-      connect(opts[:failover])
     else
       raise e
     end
