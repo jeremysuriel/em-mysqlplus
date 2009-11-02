@@ -176,12 +176,12 @@ class EventedMysql < EM::Connection
   
   def log *args
     return unless @opts[:logging]
-    p [Time.now, @fd, (@signature[-4..-1] if @signature), *args]
+    p [Time.now, @fd, (@signature if @signature), *args]
   end
 
   public
 
-  def self.connect servers_opts
+  def self.connect *servers_opts
     unless EM.respond_to?(:watch) and Mysql.method_defined?(:socket)
       raise RuntimeError, 'mysqlplus and EM.watch are required for EventedMysql'
     end
