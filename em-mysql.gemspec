@@ -1,5 +1,5 @@
 spec = Gem::Specification.new do |s|
-  s.name = 'em-mysql'
+  s.name = 'julien51-em-mysql'
   s.version = '0.3.2'
   s.date = '2009-06-23'
   s.summary = 'Async MySQL client API for Ruby/EventMachine'
