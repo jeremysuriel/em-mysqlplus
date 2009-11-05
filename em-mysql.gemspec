@@ -9,6 +9,7 @@ spec = Gem::Specification.new do |s|
   s.has_rdoc = false
   s.authors = ["Aman Gupta"]
   s.add_dependency('eventmachine', '>= 0.12.9')
+  s.add_dependency('mysqlplus', '>= 0.1.1')
 
   # git ls-files
   s.files = %w[
