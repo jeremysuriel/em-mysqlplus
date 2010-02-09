@@ -14,7 +14,7 @@ EM.run{
   SQL = EventedMysql
   def SQL(query, &blk) SQL.select(query, &blk) end
 
-  if true
+  if false
 
     SQL.settings.update :logging => true,
                         :database => 'test',
