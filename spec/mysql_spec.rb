@@ -1,14 +1,28 @@
 require 'helper'
 
 describe EventMachine::MySQL do
-  it "should create a new connection"
-  it "should reconnect when disconnected"
-  it "should execute sql"
-  it "run select queries and return results"
-  it "queue up queries and execute them in order"
-  it "have raw mode which yields the mysql object"
-  it "allow custom error callbacks for each query"
+  it "should create a new connection" do
+    EventMachine.run {
+      lambda {
+        conn = EventMachine::MySQL.new(:host => 'localhost')
+        conn.connection.connected.should be_true
+
+        conn.close
+        conn.connection.connected.should be_false
+        EventMachine.stop
+      }.should_not raise_error
+    }
+  end
+
+  #  it "should reconnect when disconnected"
+  #  it "should execute sql"
+  #  it "run select queries and return results"
+  #  it "queue up queries and execute them in order"
+  #  it "have raw mode which yields the mysql object"
+  #  it "allow custom error callbacks for each query"
 end
+
+
 
 __END__
 
@@ -26,13 +40,13 @@ EM.describe EventedMysql, 'individual connections' do
 
   should 'connect to another host if the first one is not accepting connection' do
     @mysql = EventedMysql.connect({:host => 'unconnected.host',
-                                   :port => 3306,
-                                   :database => 'test',
-                                   :logging => false},
-                                  { :host => '127.0.0.1',
-                                    :port => 3306,
-                                    :database => 'test',
-                                    :logging => false })
+        :port => 3306,
+        :database => 'test',
+        :logging => false},
+      { :host => '127.0.0.1',
+        :port => 3306,
+        :database => 'test',
+        :logging => false })
 
     @mysql.class.should == EventedMysql
     done
@@ -106,10 +120,10 @@ EM.describe EventedMysql, 'individual connections' do
     @mysql.settings.update :on_error => proc{ should.flunk('default errback invoked') }
 
     @mysql.execute('select 1+ from table', :select, proc{
-                     should.flunk('callback invoked')
-                   }, proc{ |e|
-                     done
-    })
+        should.flunk('callback invoked')
+      }, proc{ |e|
+        done
+      })
   end
 
 end
