@@ -14,8 +14,36 @@ describe EventMachine::MySQL do
     }
   end
 
+  it "should invoke errback on connection failure" do
+    EventMachine.run {
+      lambda {
+        conn = EventMachine::MySQL.new({
+            :host => 'localhost',
+            :port => 20000,
+            :socket => '',
+            :errback => Proc.new {
+              EventMachine.stop
+            }
+          })
+      }.should_not raise_error
+    }
+  end
+
+  it "should execute sql" do
+    EventMachine.run {
+      conn = EventMachine::MySQL.new(:host => 'localhost')
+      query = conn.execute("select 1")
+      query.callback { |res|
+       p res
+       EventMachine.stop
+      }
+
+#      EventMachine.stop
+    }
+  end
+
   #  it "should reconnect when disconnected"
-  #  it "should execute sql"
+  
   #  it "run select queries and return results"
   #  it "queue up queries and execute them in order"
   #  it "have raw mode which yields the mysql object"

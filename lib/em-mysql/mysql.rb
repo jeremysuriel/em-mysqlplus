@@ -22,6 +22,16 @@ module EventMachine
       @connection.close
     end
 
+    def execute(sql)
+      df = EventMachine::DefaultDeferrable.new
+      cb = Proc.new { |r| df.succeed(r) }
+      eb = Proc.new { |r| df.fail(r) }
+
+      @connection.execute(sql, :select, cb, eb)
+
+      df
+    end
+
     private
 
     def connect(opts)
@@ -45,7 +55,6 @@ module EventMachine
       end
 
       conn.options(Mysql::OPT_LOCAL_INFILE, 'client')
-
       conn.real_connect(
         opts[:host] || 'localhost',
         opts[:user] || 'root',

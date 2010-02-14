@@ -9,7 +9,17 @@ end
 
 module EventMachine
   class MySQLConnection < EventMachine::Connection
-    def initialize mysql, opts
+
+    attr_reader :processing, :connected, :opts
+    alias :settings :opts
+
+    DisconnectErrors = [
+      'query: not connected',
+      'MySQL server has gone away',
+      'Lost connection to MySQL server during query'
+    ] unless defined? DisconnectErrors
+
+    def initialize(mysql, opts)
       @mysql = mysql
       @fd = mysql.socket
       @opts = opts
@@ -23,14 +33,6 @@ module EventMachine
       self.notify_readable = true
       EM.add_timer(0){ next_query }
     end
-    attr_reader :processing, :connected, :opts
-    alias :settings :opts
-
-    DisconnectErrors = [
-      'query: not connected',
-      'MySQL server has gone away',
-      'Lost connection to MySQL server during query'
-    ] unless defined? DisconnectErrors
 
     def notify_readable
       log 'readable'
@@ -93,7 +95,6 @@ module EventMachine
 
     def unbind
       log 'mysql disconnect', $!, *($! ? $!.backtrace[0..5] : [])
-      # cp = EventedMysql.instance_variable_get('@connection_pool') and cp.delete(self)
       @connected = false
 
       # XXX wait for the next tick until the current fd is removed completely from the reactor
@@ -103,6 +104,9 @@ module EventMachine
       #
       # XXX do _NOT_ use EM.next_tick here. if a bunch of sockets disconnect at the same time, we want
       # XXX reconnects to happen after all the unbinds have been processed
+
+      # TODO: reconnect logic will / is broken with new code structure
+
       EM.add_timer(0) do
         log 'mysql reconnecting'
         @processing = false
@@ -123,16 +127,6 @@ module EventMachine
 
       begin
         unless @processing or !@connected
-          # begin
-          #   log 'mysql ping', @mysql.ping
-          #   # log 'mysql stat', @mysql.stat
-          #   # log 'mysql errno', @mysql.errno
-          # rescue
-          #   log 'mysql ping failed'
-          #   @@queue << [response, sql, blk]
-          #   return close
-          # end
-
           @processing = true
 
           log 'mysql sending', sql
