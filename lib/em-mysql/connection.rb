@@ -24,7 +24,7 @@ module EventMachine
       @fd = mysql.socket
       @opts = opts
       @current = nil
-      @@queue ||= []
+      @queue ||= []
       @processing = false
       @connected = true
 
@@ -74,11 +74,11 @@ module EventMachine
     rescue Mysql::Error => e
       log 'mysql error', e.message
       if e.message =~ /Deadlock/ and retries < MAX_RETRIES_ON_DEADLOCKS
-        @@queue << [response, sql, cblk, eblk, retries + 1]
+        @queue << [response, sql, cblk, eblk, retries + 1]
         @processing = false
         next_query
       elsif DisconnectErrors.include? e.message
-        @@queue << [response, sql, cblk, eblk, retries + 1]
+        @queue << [response, sql, cblk, eblk, retries + 1]
         return close
       elsif cb = (eblk || @opts[:on_error])
         cb.call(e)
@@ -122,23 +122,19 @@ module EventMachine
       end
     end
 
-    def execute sql, response = nil, cblk = nil, eblk = nil, retries = 0, &blk
-      cblk ||= blk
-
+    def execute(sql, response = nil, cblk = nil, eblk = nil, retries = 0)
       begin
-        unless @processing or !@connected
+        if not @processing or not @connected
           @processing = true
-
-          log 'mysql sending', sql
           @mysql.send_query(sql)
         else
-          @@queue << [response, sql, cblk, eblk, retries]
+          @queue << [response, sql, cblk, eblk, retries]
           return
         end
       rescue Mysql::Error => e
         log 'mysql error', e.message
         if DisconnectErrors.include? e.message
-          @@queue << [response, sql, cblk, eblk, retries]
+          @queue << [response, sql, cblk, eblk, retries]
           return close
         else
           raise e
@@ -158,7 +154,7 @@ module EventMachine
     private
 
     def next_query
-      if @connected and !@processing and pending = @@queue.shift
+      if @connected and !@processing and pending = @queue.shift
         response, sql, cblk, eblk = pending
         execute(sql, response, cblk, eblk)
       end

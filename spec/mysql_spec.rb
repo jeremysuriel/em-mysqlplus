@@ -34,14 +34,23 @@ describe EventMachine::MySQL do
       conn = EventMachine::MySQL.new(:host => 'localhost')
       query = conn.execute("select 1")
       query.callback { |res|
-       p res
-       EventMachine.stop
+        p res
+        EventMachine.stop
       }
 
-#      EventMachine.stop
+      #      EventMachine.stop
     }
   end
 
+  it "should accept block as query callback" do
+    EventMachine.run {
+      conn = EventMachine::MySQL.new(:host => 'localhost')
+      conn.execute("select 1") { |res|
+        p res
+        EventMachine.stop
+      }
+    }
+  end
   #  it "should reconnect when disconnected"
   
   #  it "run select queries and return results"

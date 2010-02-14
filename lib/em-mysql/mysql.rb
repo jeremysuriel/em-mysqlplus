@@ -22,9 +22,9 @@ module EventMachine
       @connection.close
     end
 
-    def execute(sql)
+    def execute(sql, &blk)
       df = EventMachine::DefaultDeferrable.new
-      cb = Proc.new { |r| df.succeed(r) }
+      cb = blk || Proc.new { |r| df.succeed(r) }
       eb = Proc.new { |r| df.fail(r) }
 
       @connection.execute(sql, :select, cb, eb)
