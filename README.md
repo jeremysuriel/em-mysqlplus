@@ -1,8 +1,40 @@
-Pretty much a complete overhaul of the original em-mysql gem. 
+# EM-MySQL
 
-Goal: simpler & cleaner API. All other frills & interfaces later.
+EventMachine wrapper for the C-based MySQL / MySQLPlus Ruby gems, which provides
+callbacks, errbacks and all other niceties of EventMachine while keeping the API
+of the original MySQL gem. Simple, but it works.
 
+Features:
+* Maintains mysql gem API
+* Deferrables for every query with callback & errback
+* Connection query queue - pile 'em up!
+* Auto-reconnect on disconnects
+* Auto-retry on deadlocks
 
-Credits
--------
-Async MySQL driver for Ruby/EventMachine - (c) 2008 Aman Gupta (tmm1)
+## Example usage:
+
+  EventMachine.run {
+      conn = EventMachine::MySQL.new(:host => 'localhost')
+      query = conn.query("select 1+1")
+      query.callback { |res| p res.all_hashes }
+      query.errback  { |res| p res.all_hashes }
+  }
+
+## Query queueing:
+
+  EventMachine.run {
+      conn = EventMachine::MySQL.new(:host => 'localhost')
+
+      results = []
+      conn.query("select 1") {|res| results.push res.fetch_row.first.to_i}
+      conn.query("select 2") {|res| results.push res.fetch_row.first.to_i}
+      conn.query("select 3") {|res| results.push res.fetch_row.first.to_i}
+
+      EventMachine.add_timer(0.05) {
+        p results # => [1,2,3]
+      }
+  }
+
+# Credits
+
+Original Async MySQL driver for Ruby/EventMachine - (c) 2008 Aman Gupta (tmm1)
