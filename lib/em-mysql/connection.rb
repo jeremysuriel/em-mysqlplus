@@ -1,3 +1,10 @@
+
+class Mysql
+  def result
+    @cur_result
+  end
+end
+
 module EventMachine
   class MySQLConnection < EventMachine::Connection
 
@@ -12,7 +19,8 @@ module EventMachine
       'Lost connection to MySQL server during query'
     ] unless defined? DisconnectErrors
 
-    def initialize(mysql, opts)
+    def initialize(mysql, opts, conn)
+      @conn = conn
       @mysql = mysql
       @fd = mysql.socket
       @opts = opts
@@ -63,8 +71,6 @@ module EventMachine
     end
 
     def unbind
-      @connected = false
-
       # wait for the next tick until the current fd is removed completely from the reactor
       #
       # in certain cases the new FD# (@mysql.socket) is the same as the old, since FDs are re-used
@@ -73,14 +79,14 @@ module EventMachine
       # do _NOT_ use EM.next_tick here. if a bunch of sockets disconnect at the same time, we want
       # reconnects to happen after all the unbinds have been processed
 
-      # TODO: reconnect logic will / is broken with new code structure
+      @connected = false
 
       EM.add_timer(0) do
         @processing = false
-        @mysql = EventedMysql._connect @opts
+        @mysql = @conn.connect_socket(@opts)
         @fd = @mysql.socket
 
-        @signature = EM.attach_fd @mysql.socket, true
+        @signature = EM.attach_fd(@mysql.socket, true)
         EM.set_notify_readable @signature, true
         EM.instance_variable_get('@conns')[@signature] = self
         @connected = true

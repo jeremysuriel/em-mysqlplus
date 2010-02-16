@@ -14,7 +14,7 @@ module EventMachine
         raise RuntimeError, 'mysqlplus and EM.watch are required for EventedMysql'
       end
 
-      @settings = { :debug => true }.merge!(opts)
+      @settings = { :debug => false }.merge!(opts)
       @connection = connect(@settings)
     end
 
@@ -22,7 +22,7 @@ module EventMachine
       @connection.close
     end
 
-    def execute(sql, &blk)
+    def query(sql, &blk)
       df = EventMachine::DefaultDeferrable.new
       cb = blk || Proc.new { |r| df.succeed(r) }
       eb = Proc.new { |r| df.fail(r) }
@@ -31,13 +31,19 @@ module EventMachine
 
       df
     end
+    alias :real_query :query
 
-    private
+    # behave as a normal mysql connection 
+    def method_missing(method, *args, &block)
+      if @connection.respond_to? method
+        @connection.send(method, args)
+      end
+    end
 
     def connect(opts)
       if conn = connect_socket(opts)
         debug [:connect, conn.socket, opts]
-        EM.watch(conn.socket, EventMachine::MySQLConnection, conn, opts)
+        EM.watch(conn.socket, EventMachine::MySQLConnection, conn, opts, self)
       else
         # invokes :errback callback in opts before firing again
         debug [:reconnect]
