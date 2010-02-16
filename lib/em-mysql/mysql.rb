@@ -27,7 +27,7 @@ module EventMachine
       cb = blk || Proc.new { |r| df.succeed(r) }
       eb = Proc.new { |r| df.fail(r) }
 
-      @connection.execute(sql, :select, cb, eb)
+      @connection.execute(sql, cb, eb)
 
       df
     end
@@ -37,11 +37,11 @@ module EventMachine
     def connect(opts)
       if conn = connect_socket(opts)
         debug [:connect, conn.socket, opts]
-        EM.watch conn.socket, EventMachine::MySQLConnection, conn, opts
+        EM.watch(conn.socket, EventMachine::MySQLConnection, conn, opts)
       else
         # invokes :errback callback in opts before firing again
         debug [:reconnect]
-        EM.add_timer(5){ connect opts }
+        EM.add_timer(5) { connect opts }
       end
     end
 
