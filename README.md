@@ -1,12 +1,12 @@
-# EM-MySQL
+# EM-MySQL (Plus)
 
 EventMachine wrapper for the C-based MySQL / MySQLPlus Ruby gems, which provides
 callbacks, errbacks and all other niceties of EventMachine while keeping the API
-of the original MySQL gem. Simple, but it works.
+of the original C-based MySQL gem. 
 
 Features:
 
- * Maintains mysql gem API
+ * Maintains C-based mysql gem API
  * Deferrables for every query with callback & errback
  * Connection query queue - pile 'em up!
  * Auto-reconnect on disconnects
