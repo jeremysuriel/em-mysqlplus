@@ -115,7 +115,13 @@ module EventMachine
 
       @current = [sql, cblk, eblk, retries]
     end
-  
+
+    # mysql gem has syncronous methods such as list_dbs
+    # and others which require that we execute without callbacks
+    def method_missing(method, *args, &blk)
+      @mysql.send(method, *args, &blk) if @mysql.respond_to? method
+    end
+
     def close
       @connected = false
       detach
@@ -123,12 +129,12 @@ module EventMachine
 
     private
 
-    def next_query
-      if @connected and !@processing and pending = @queue.shift
-        sql, cblk, eblk = pending
-        execute(sql, cblk, eblk)
+      def next_query
+        if @connected and !@processing and pending = @queue.shift
+          sql, cblk, eblk = pending
+          execute(sql, cblk, eblk)
+        end
       end
-    end
- 
+
   end
 end

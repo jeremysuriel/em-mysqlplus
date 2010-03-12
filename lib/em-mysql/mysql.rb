@@ -33,11 +33,9 @@ module EventMachine
     end
     alias :real_query :query
 
-    # behave as a normal mysql connection 
-    def method_missing(method, *args, &block)
-      if @connection.respond_to? method
-        @connection.send(method, args)
-      end
+    # behave as a normal mysql connection
+    def method_missing(method, *args, &blk)
+      @connection.send(method, *args)
     end
 
     def connect(opts)
@@ -69,7 +67,7 @@ module EventMachine
         opts[:port],
         opts[:socket],
         0 +
-          # XXX multi results require multiple callbacks to parse
+        # XXX multi results require multiple callbacks to parse
         # Mysql::CLIENT_MULTI_RESULTS +
         # Mysql::CLIENT_MULTI_STATEMENTS +
         (opts[:compress] == false ? 0 : Mysql::CLIENT_COMPRESS)

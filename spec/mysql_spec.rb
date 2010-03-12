@@ -76,7 +76,7 @@ describe EventMachine::MySQL do
       }
     }
   end
-  
+
   it "should continue processing queries after hitting an error" do
     EventMachine.run {
       conn = EventMachine::MySQL.new(:host => 'localhost')
@@ -86,6 +86,18 @@ describe EventMachine::MySQL do
         res.fetch_row.first.to_i.should == 2
         EventMachine.stop
       }
+    }
+  end
+
+  it "should work with synchronous commands" do
+    EventMachine.run {
+      conn = EventMachine::MySQL.new(:host => 'localhost', :database => 'test')
+
+      conn.list_dbs.class.should == Array
+      conn.list_tables.class.should == Array
+      conn.quote("select '1'").should == "select \\'1\\'"
+
+      EventMachine.stop
     }
   end
 
