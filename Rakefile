@@ -10,6 +10,7 @@ begin
     gemspec.homepage = "http://github.com/igrigorik/em-mysql"
     gemspec.authors = ["Ilya Grigorik", "Aman Gupta"]
     gemspec.add_dependency('eventmachine', '>= 0.12.9')
+    gemspec.rubyforge_project = "em-mysqlplus"
   end
 
   Jeweler::GemcutterTasks.new

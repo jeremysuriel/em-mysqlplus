@@ -13,6 +13,8 @@ Features:
  * Auto-retry on deadlocks
 
 ## Example usage:
+   > gem install em-mysqlplus
+   > irb -r em-mysqlplus
 
     EventMachine.run {
       conn = EventMachine::MySQL.new(:host => 'localhost')
