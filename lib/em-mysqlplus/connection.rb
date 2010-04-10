@@ -123,8 +123,9 @@ module EventMachine
     end
 
     def close
-      @connected = false
       detach
+      @mysql.close
+      @connected = false
     end
 
     private
