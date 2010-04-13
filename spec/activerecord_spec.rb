@@ -11,17 +11,19 @@ ActiveRecord::Base.configurations = YAML::load(ERB.new(File.read(File.join(File.
 ActiveRecord::Base.default_timezone = :utc
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 ActiveRecord::Base.logger.level = Logger::INFO
-ActiveRecord::Base.pluralize_table_names = false
+ActiveRecord::Base.pluralize_table_names = true
 ActiveRecord::Base.time_zone_aware_attributes = true
 Time.zone = 'UTC'
+
+class Widget < ActiveRecord::Base; end;
 
 describe "ActiveRecord Driver for EM-MySQLPlus" do
   it "should establish AR connection" do
     EventMachine.run {
       Fiber.new {
         ActiveRecord::Base.establish_connection
-        result = ActiveRecord::Base.connection.query('select sleep(1)')
-        p result
+        result = Widget.find_by_sql("select sleep(1)")
+        result.size.should == 1
 
         EventMachine.stop
       }.resume
@@ -35,7 +37,7 @@ describe "ActiveRecord Driver for EM-MySQLPlus" do
       3.times do |n|
         Fiber.new {
           ActiveRecord::Base.establish_connection
-          results.push ActiveRecord::Base.connection.query('select sleep(1)')
+          results.push Widget.find_by_sql("select sleep(1)")
         }.resume
       end
 
@@ -45,5 +47,4 @@ describe "ActiveRecord Driver for EM-MySQLPlus" do
       }
     }
   end
-
 end

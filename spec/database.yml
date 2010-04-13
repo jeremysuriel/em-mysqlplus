@@ -1,4 +1,5 @@
 test:
   adapter: em_mysqlplus
   database: widgets
+  user: root
   pool: 3
