@@ -1,0 +1,5 @@
+test:
+  adapter: em_mysqlplus
+  database: widgets
+  pool: 1
+  fiber_pool: 1
