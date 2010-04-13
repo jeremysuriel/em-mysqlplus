@@ -17,15 +17,13 @@ module ActiveRecord
       end
 
       def connect
-        @connection = EventMachine::Synchrony::ConnectionPool.new(size: @config[:fiber_pool]) do
-          EventMachine::MySQL.new({
-                                    :host => @hostname,
-                                    :port => @port,
-                                    :database => @config[:database],
-                                    :password => @config[:password],
-                                    :socket   => @config[:socket]
-          })
-        end
+        @connection = EventMachine::MySQL.new({
+                                                :host => @hostname,
+                                                :port => @port,
+                                                :database => @config[:database],
+                                                :password => @config[:password],
+                                                :socket   => @config[:socket]
+        })
 
         configure_connection
         @connection

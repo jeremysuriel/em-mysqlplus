@@ -15,9 +15,6 @@ ActiveRecord::Base.pluralize_table_names = false
 ActiveRecord::Base.time_zone_aware_attributes = true
 Time.zone = 'UTC'
 
-class Widget < ActiveRecord::Base; end
-
-
 describe "ActiveRecord Driver for EM-MySQLPlus" do
   it "should establish AR connection" do
     EventMachine.run {
@@ -30,4 +27,23 @@ describe "ActiveRecord Driver for EM-MySQLPlus" do
       }.resume
     }
   end
+
+  it "should use fiber aware ConnectionPool" do
+    EventMachine.run {
+      results = []
+
+      3.times do |n|
+        Fiber.new {
+          ActiveRecord::Base.establish_connection
+          results.push ActiveRecord::Base.connection.query('select sleep(1)')
+        }.resume
+      end
+
+      EM.add_timer(1.5) {
+        results.size.should == 3
+        EventMachine.stop
+      }
+    }
+  end
+
 end
