@@ -1,14 +1,12 @@
-gem 'activerecord', '>= 2.3.4'
-
-require 'activerecord'
-require 'active_record/connection_adapters/mysql_adapter'
 require 'em-synchrony'
+require 'em-synchrony/em-mysqlplus'
+
+require 'active_record/connection_adapters/mysql_adapter'
 
 module ActiveRecord
   module ConnectionAdapters
 
     class EmMysqlAdapter < MysqlAdapter
-
       def initialize(connection, logger, host_parameters, connection_parameters, config)
         @hostname = host_parameters[0]
         @port = host_parameters[1]

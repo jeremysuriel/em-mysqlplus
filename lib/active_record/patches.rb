@@ -82,7 +82,7 @@ module ActiveRecord
             keys.delete(object_id)
           end
         end
-#        puts "Pruning stale connections: #{f.busy_fibers.size} #{f.fibers.size} #{keys.inspect}"
+
         keys.each do |key|
           next unless cache.has_key?(key)
           block.call(key, cache[key])
