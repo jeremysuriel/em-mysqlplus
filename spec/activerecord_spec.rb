@@ -3,6 +3,7 @@ require 'logger'
 require 'yaml'
 require 'erb'
 
+require 'active_record'
 require 'lib/em-activerecord'
 
 RAILS_ENV='test'
