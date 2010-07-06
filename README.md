@@ -2,7 +2,7 @@
 
 EventMachine wrapper for the C-based MySQL / MySQLPlus Ruby gems, which provides
 callbacks, errbacks and all other niceties of EventMachine while keeping the API
-of the original C-based MySQL gem. 
+of the original C-based MySQL gem.
 
 Features:
 
@@ -25,19 +25,20 @@ Features:
 
 ## Query queueing:
 
-  	EventMachine.run {
-	  conn = EventMachine::MySQL.new(:host => 'localhost')
+    EventMachine.run {
+    conn = EventMachine::MySQL.new(:host => 'localhost')
 
-	  results = []
-	  conn.query("select 1") {|res| results.push res.fetch_row.first.to_i}
-	  conn.query("select 2") {|res| results.push res.fetch_row.first.to_i}
-	  conn.query("select 3") {|res| results.push res.fetch_row.first.to_i}
+    results = []
+    conn.query("select 1") {|res| results.push res.fetch_row.first.to_i}
+    conn.query("select 2") {|res| results.push res.fetch_row.first.to_i}
+    conn.query("select 3") {|res| results.push res.fetch_row.first.to_i}
 
-	  EventMachine.add_timer(0.05) {
-	    p results # => [1,2,3]
-	  }
-	}
+    EventMachine.add_timer(0.05) {
+      p results # => [1,2,3]
+    }
+  }
 
 # Credits
 
-Original Async MySQL driver for Ruby/EventMachine - (c) 2008 Aman Gupta (tmm1)
+ * Original Async MySQL driver for Ruby/EventMachine - (c) 2008 Aman Gupta (tmm1)
+ * ActiveRecord fiber patches - Mike Perham (mperham)
